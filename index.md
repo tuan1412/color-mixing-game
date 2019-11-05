@@ -1,1 +1,3 @@
-Hello wolrd
+---
+permalink: /index.html
+---
