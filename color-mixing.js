@@ -87,7 +87,7 @@ $(function () {
       a: Math.atan2(xy1.y - xy2.y, xy2.x - xy1.x)
     };
   };
-  var dieSound = new sound('/sound/dead.wav');
+  var dieSound = new sound('dead.wav');
   var die = function () {
     died = true;
     repeat(function () { newParticle(p.x, p.y + 5); }, 14);
@@ -265,7 +265,7 @@ $(function () {
   }
   var target = { x: W - 20, y: 20, r: 10, c: '#FFF' };
 
-  var scoreSound = new sound('/sound/score.wav');
+  var scoreSound = new sound('score.wav');
   var newStar = function (n, type) {
     var color = getColorStar(p.c, type);
     var st = newObject(W / 2, 100 + obstacles.sep * n + obstacles.sep / 2, 15, color);
@@ -335,7 +335,7 @@ $(function () {
 
   p.yy = p.y;
   var clicked = false;
-  var backgroundSound = new sound("/sound/background.mp3", true);
+  var backgroundSound = new sound("background.mp3", true);
 
   var bgPlay = false;
   $(canvas).click(function () {
