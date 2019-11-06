@@ -407,6 +407,7 @@ $(function () {
         camY = 0;
         cspd = 1;
         died = false;
+        target.c = '#FFF';
         p.y = H * 1 / 4;
         p.acc = 0;
         p.spd = 0;
