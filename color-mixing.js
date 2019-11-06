@@ -1,4 +1,22 @@
 $(function () {
+  function sound(src, loop) {
+    this.sound = document.createElement("audio");
+    this.sound.src = src;
+    this.sound.setAttribute("preload", "auto");
+    this.sound.setAttribute("controls", "none");
+    this.sound.setAttribute("muted", "muted");
+    this.sound.setAttribute("autoplay", true);
+    if (loop) this.sound.setAttribute("loop", true);
+    this.sound.style.display = "none";
+    document.body.appendChild(this.sound);
+    this.play = function () {
+      this.sound.play();
+    }
+    this.stop = function () {
+      this.sound.pause();
+    }
+  }
+
   $('body').css('background-color', '#000');
   var FPS = 60;
   var T = TT = 0;
@@ -47,19 +65,14 @@ $(function () {
     colors = colors || baseColor;
     return colors[n % 3];
   };
-  var gCol = function (index) {
-    var n = index;
-    return col[n % 4];
-  };
+
   var rRange = function (x1, x2) {
     return x1 + Math.random() * (x2 - x1);
   };
   var choose = function () {
     return arguments[Math.floor(arguments.length * Math.random())];
   };
-  var rCol2 = function () {
-    return mixedColor[Math.floor(3 * Math.random())];
-  };
+
   var rCol = function () {
     return col[Math.floor(4 * Math.random())];
   };
@@ -74,9 +87,11 @@ $(function () {
       a: Math.atan2(xy1.y - xy2.y, xy2.x - xy1.x)
     };
   };
+  var dieSound = new sound('/sound/dead.wav');
   var die = function () {
     died = true;
     repeat(function () { newParticle(p.x, p.y + 5); }, 14);
+    dieSound.play();
     TT = 1;
   };
   var colIndex = Math.floor(4 * Math.random());
@@ -127,7 +142,7 @@ $(function () {
       };
       if (!died && p.c != o8.c && getDots(coord(p.x, p.y), coord(o8.x, o8.y)).d < p.r + o8.r) {
         if (isBaseColor(p.c)) {
-          var mixedColor =  mixingColor(p.c, o8.c);
+          var mixedColor = mixingColor(p.c, o8.c);
           p.c = mixedColor;
           var colorObject = o8.c;
           for (var object of objects) {
@@ -250,6 +265,7 @@ $(function () {
   }
   var target = { x: W - 20, y: 20, r: 10, c: '#FFF' };
 
+  var scoreSound = new sound('/sound/score.wav');
   var newStar = function (n, type) {
     var color = getColorStar(p.c, type);
     var st = newObject(W / 2, 100 + obstacles.sep * n + obstacles.sep / 2, 15, color);
@@ -275,7 +291,7 @@ $(function () {
           st.destroy();
         } else {
           score += st.score;
-
+          scoreSound.play();
           p.c = baseColor[Math.floor(Math.random() * 3)];
           flag = true;
           with (target) {
@@ -319,7 +335,15 @@ $(function () {
 
   p.yy = p.y;
   var clicked = false;
-  $(canvas).click(function () { clicked = true; });
+  var backgroundSound = new sound("/sound/background.mp3", true);
+
+  var bgPlay = false;
+  $(canvas).click(function () {
+    clicked = true;
+    if (!bgPlay) {
+      backgroundSound.play(); bgPlay = true
+    }
+  });
   setInterval(function () {
     // fill mau den man hinh
     c.fillStyle = '#222';
@@ -400,6 +424,8 @@ $(function () {
       c.strokeText('TAP TO', W / 2, H / 2);
       c.fillText('RESTART', W / 2, H / 2 + 50);
       c.strokeText('RESTART', W / 2, H / 2 + 50);
+      backgroundSound.stop();
+      bgPlay = false;
       if (clicked) {
         score = 0;
         T = 0;
