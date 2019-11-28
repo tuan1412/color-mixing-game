@@ -25,6 +25,8 @@ $(function () {
   var W = _W = 360;
   var H = _H = 512;
   var score = 0;
+  var hintColor;
+
   var dim = { w: $(window).width(), h: $(window).height() };
   $(canvas).attr({ 'width': W, 'height': H });
   _H = dim.h;
@@ -37,11 +39,20 @@ $(function () {
   $('body').append(canvas);
   var camY = 0;
   var died = false;
-  var dCircle = function (coords, radius, color) {
+  var dCircle = function (coords, radius, color, type) {
     c.beginPath();
     c.fillStyle = color;
+    if (score < 5) {
+      if (type === 'new8') {
+        if (hintColor === color) {
+          c.shadowColor = '#fff';
+          c.shadowBlur = 10;
+        }
+      }
+    }
     c.arc(coords.x, coords.y, radius, 0, 2 * Math.PI);
     c.fill();
+    c.shadowBlur = 0;
   };
   var coord = function (dx, dy) {
     return { x: dx, y: H + camY - dy };
@@ -98,11 +109,11 @@ $(function () {
   var p = { x: W / 2, y: H / 6, r: 10, c: gCol2(colIndex), spd: 0, spdMax: 6, acc: 0 };
 
   var objects = [];
-  var newObject = function (x, y, r, c, order, col) {
+  var newObject = function (x, y, r, c, order, col, type) {
     var o = { x: x, y: y, r: r, c: c, t: 0, destroyed: false, order: order, col };
     o.move = function () { };
     o.draw = function () {
-      dCircle(coord(o.x, o.y), o.r, o.c);
+      dCircle(coord(o.x, o.y), o.r, o.c, type);
     };
     o.destroy = function () {
       o.destroyed = true;
@@ -128,7 +139,7 @@ $(function () {
   var obstacles = { n: 0, sep: 350 };
   var cspd = 1;
   var new8 = function (y, ang, dir, col) {
-    var o8 = newObject(W / 2, 100 + obstacles.sep * y, 10, gCol2(col), y, col);
+    var o8 = newObject(W / 2, 100 + obstacles.sep * y, 10, gCol2(col), y, col, 'new8');
     o8.cx = o8.x;
     o8.cy = o8.y;
     o8.rad8 = 80;
@@ -208,9 +219,15 @@ $(function () {
             };
           };
         };
-
+        if (score < 5) {
+          if (hintColor === c.strokeStyle.toUpperCase()) {
+            c.shadowColor = '#fff';
+            c.shadowBlur = 10;
+          }
+        }
         c.arc(co.x, co.y, c1.r, a, a2);
         c.stroke();
+        c.shadowBlur = 0;
       };
       c1.angle += c1.spd * Math.PI / 180;
     };
@@ -247,6 +264,34 @@ $(function () {
     if (starColor == '#00FF00') return greenBaseColors[Math.floor(Math.random() * 3)];
   }
 
+  var getHintColor = function (playerColor, targetColor) {
+    var objectHintColor = {
+      '#FF0000': {
+        '#FF0000': '#FF0000',
+        '#FF00FF': '#0000FF',
+        '#FFFF00': '#00FF00',
+      },
+      '#0000FF': {
+        '#0000FF': '#0000FF',
+        '#00FFFF': '#00FF00',
+        '#FF00FF': '#FF0000',
+      },
+      '#00FF00': {
+        '#00FF00': '#00FF00',
+        '#00FFFF': '#0000FF',
+        '#FFFF00': '#FF0000'
+      },
+    }
+    return objectHintColor[playerColor][targetColor];
+  }
+
+  function chooseObs() {
+    if (score < 3) return 0;
+    if (score < 7) return choose(0, 0, 0, 0, 0, 2, 2, 2, 1, 1);
+    if (score < 15) return choose(0, 0, 0, 0, 2, 2, 2, 1, 1, 1);
+    return choose(0, 0, 0, 1, 2, 2, 2, 1, 1, 1)
+  }
+
   var flag = false;
   var dfixStar = function (x, y, r1, ang, col) {
     c.fillStyle = col;
@@ -261,28 +306,29 @@ $(function () {
       c.lineTo(x + r1 * Math.cos(a1), y + r1 * Math.sin(a1));
       c.lineTo(x + r2 * Math.cos(a2), y + r2 * Math.sin(a2));
     };
-    c.stroke();
+    c.fill();
   }
   var target = { x: W - 20, y: 20, r: 10, c: '#FFF' };
-
   var scoreSound = new sound('score.wav');
   var newStar = function (n, type) {
     var color = getColorStar(p.c, type);
     var st = newObject(W / 2, 100 + obstacles.sep * n + obstacles.sep / 2, 15, color);
     if (target.c === '#FFF') {
       target.c = color;
+      hintColor = getHintColor(p.c, target.c);
       with (target) {
         dfixStar(x, y, r, 0, c);
       }
     }
 
-    st.score = choose(1, 1, 1, 1, 1, 1, 10);
+    st.score = 1;
     st.a = 0;
     st.rs = st.r;
     st.move = function () {
       if (flag) {
         st.c = getColorStar(p.c, type);
         target.c = JSON.parse(JSON.stringify(st.c));
+        hintColor = getHintColor(p.c, target.c);
         flag = false;
       }
       if (getDots({ x: p.x, y: p.y }, { x: st.x, y: st.y }).d < st.r) {
@@ -365,7 +411,7 @@ $(function () {
 
     while (obstacles.n < 2 + Math.floor(camY / obstacles.sep)) {
       obstacles.n += 1;
-      var type = choose(0, 0, 0, 0, 1, 2, 2, 2)
+      var type = chooseObs()
 
       switch (type) {
         case 0:
@@ -389,8 +435,17 @@ $(function () {
       if (clicked) {
         p.spd = p.spdMax;
         if (p.acc == 0) {
-          p.spd *= 1.2;
-          p.acc = -0.3;
+          if (score < 7) {
+            p.spd *= 1.2;
+            p.acc = -0.3;
+          } else if (score < 15) {
+            p.spd *= 1.5;
+            p.acc = -0.3;
+          } else {
+            p.spd *= 2;
+            p.acc = -0.3;
+          }
+
         };
       };
       with (p) {
