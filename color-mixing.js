@@ -104,9 +104,24 @@ $(function () {
     repeat(function () { newParticle(p.x, p.y + 5); }, 14);
     dieSound.play();
     TT = 1;
+    if (score > hightScore) {
+      hightScore = score;
+      localStorage.setItem('highScore', score);
+    }
   };
   var colIndex = Math.floor(4 * Math.random());
   var p = { x: W / 2, y: H / 6, r: 10, c: gCol2(colIndex), spd: 0, spdMax: 6, acc: 0 };
+  var hightScore = localStorage.getItem('highScore') ? parseInt(localStorage.getItem('highScore')) : 0;
+  var notify = false;
+  function notifyHighScore() {
+    if (score > hightScore && !notify) {
+      notify = true;
+      return $.notify("You got highscore", {
+        className: 'info',
+        position: 'top center',
+      });
+    }
+  }
 
   var objects = [];
   var newObject = function (x, y, r, c, order, col, type) {
@@ -337,6 +352,7 @@ $(function () {
           st.destroy();
         } else {
           score += st.score;
+          notifyHighScore();
           scoreSound.play();
           p.c = baseColor[Math.floor(Math.random() * 3)];
           flag = true;
@@ -475,12 +491,23 @@ $(function () {
       c.fillStyle = '#000';
       c.strokeStyle = '#EEE';
       c.lineWidth = 2;
-      c.fillText('TAP TO', W / 2, H / 2);
-      c.strokeText('TAP TO', W / 2, H / 2);
-      c.fillText('RESTART', W / 2, H / 2 + 50);
-      c.strokeText('RESTART', W / 2, H / 2 + 50);
+      c.fillText('TAP TO', W / 2, H / 2 - 50);
+      c.strokeText('TAP TO', W / 2, H / 2 - 50);
+      c.fillText('RESTART', W / 2, H / 2);
+      c.strokeText('RESTART', W / 2, H / 2);
+      c.fillStyle = '#0e1414';
+      c.fillRect(0, H / 2 + 20, W, 40);
+      c.font = '30px Arial';
+      c.textAlign = 'center';
+      c.fillStyle = '#fff';
+      c.fillText(`Your score: ${score}`, W / 2, H / 2 + 50);
+      c.fillStyle = '#f5b042';
+      c.fillRect(0, H / 2 + 70, W, 40);
+      c.fillStyle = '#fff';
+      c.fillText(`High score: ${hightScore}`, W / 2, H / 2 + 100);
       backgroundSound.stop();
       bgPlay = false;
+      notify = false;
       if (clicked) {
         score = 0;
         T = 0;
